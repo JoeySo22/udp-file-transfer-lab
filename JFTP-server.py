@@ -78,6 +78,7 @@ errorSockets = []
 readSockets.append(serverSocket)
 dgram = b''
 client = None
+filename = ''
 
 while 1:
     # Select is mostly for utilizing the timeout as I understand. 
