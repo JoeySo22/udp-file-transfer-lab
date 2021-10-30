@@ -79,8 +79,6 @@ while 1:
     print("from %s: rec'd '%s'" % (repr(clientAddrPort), message))
     for sock in readReady:
         dgram, client = sock.recvfrom(999)
-    for sock in writeReady:
-        serverSocket.sendto(
     if current_state is LISTENING:
         if message == b'introduce':
             serverSocket.sendto(clientAddrPort, b'ACK')
