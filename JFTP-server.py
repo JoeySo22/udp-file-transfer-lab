@@ -86,7 +86,10 @@ while 1:
         else:
             continue
     elif current_state is READY:
-        if message == b'asd':
+        dg_len = len(dgram)
+        if dg_len <= 255 and dg_len > 1 :
+            filename = dgram.decode()
+            
             
     elif current_state is OPEN_FILE:
         
