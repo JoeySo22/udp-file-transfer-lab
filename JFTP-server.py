@@ -83,6 +83,23 @@ filename = ''
 while 1:
     # Select is mostly for utilizing the timeout as I understand. 
     readReady, writeReady, errorReady = select.select(readSockets, writeSockets,
+<<<<<<< HEAD
+                                                      errorSockets, 5) 
+    print("from %s: rec'd '%s'" % (repr(clientAddrPort), message))
+    for sock in readReady:
+        dgram, client = sock.recvfrom(999)
+    if current_state is LISTENING:
+        if message == b'introduce':
+            serverSocket.sendto(clientAddrPort, b'ACK')
+            current_state = READY
+        else:
+            continue
+    elif current_state is READY:
+        dg_len = len(dgram)
+        if dg_len <= 255 and dg_len > 1 :
+            filename = dgram.decode()
+            
+=======
                                                       errorSockets, 5)
     # If the select timeout occurs, we need to increment the counter.
     if not readReady and not writeready and not errorReady:
@@ -106,6 +123,7 @@ while 1:
         elif current_state is OPEN_FILE:
             print('\tOPEN_FILE'
         elif current_state is WRITING:
+>>>>>>> 056ce7823734ff9d730d8a568b56315bfe99f091
             
         elif current_state is DONE:
             
