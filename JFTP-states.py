@@ -37,7 +37,7 @@ def fn_confirm_validation(state_struct: JFTPState, dgram: bytes) -> bool, str:
         return False, ''
 
 def dial_validation(state_struct: JFTPState, dgram: bytes) -> bool, str:
-    if len(dgram) == 999:
+    if len(dgram) == 100:
         sdgram = dgram.decode()
         try:
             current_packet_number = int(sdgram[:2])

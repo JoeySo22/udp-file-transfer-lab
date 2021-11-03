@@ -72,5 +72,5 @@ while 1:
     # If there is work to do, do it in here. 
     else:
         for sock in readReady:
-            dgram, client = sock.recvfrom(999)
+            dgram, client = sock.recvfrom(100)
             print('dgram received from\t%s\t%s' % (client, dgram))
