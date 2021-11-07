@@ -45,7 +45,7 @@ def dial_validation(state_struct: JFTPState, dgram: bytes) -> bool, str:
             next_packet_number = int(dgram[-2:])
         except Error:
             print('\tDIAL: Error getting dgram packet index.')
-        if state_struct.get_current_packet_number() + 1 != current_packet_number:
+        if state_struct.get_current_packet_number()+1 != current_packet_number:
             return False, 'Packet out of order'
         if state_struct.get_next_packet_number() + 1 != next_packet_number:
             return False, 'Packet out of order'
@@ -70,11 +70,11 @@ def save_validation(state_struct: JFTPState, dgram: bytes) -> bool, str:
     pass
 
 """
-This class is used to organize the different states. They will be placed inside of a list and
-sorted to be ordered of the enumeration. 
+This class is used to organize the different states. They will be placed inside 
+of a list and sorted to be ordered of the enumeration. 
 
-Having it organized this way allows there to be an ordered way to add more states and
-to dictate their order of succession. 
+Having it organized this way allows there to be an ordered way to add more 
+states and to dictate their order of succession. 
 
 The purpose of this class is to standardize a state and its transitions. 
 
@@ -179,8 +179,8 @@ class StateSet:
     def run_state(self, dgram):
         '''
         Need to use this method to run the different states. It delegates
-        between the states and allows the state flow to change under this control.
-        This is the engine of the state machine. 
+        between the states and allows the state flow to change under this 
+        control. This is the engine of the state machine. 
         '''
         
         
