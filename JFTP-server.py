@@ -39,27 +39,36 @@ readSockets.append(serverSocket)
 dgram = b''
 client = None
 session_dictionary: dict = {}
+timeout = 300 # 5 minutes for log when not serving
 
 while 1:
     # Select is mostly for utilizing the timeout as I understand. 
     readReady, writeReady, errorReady = select.select(readSockets, writeSockets,
-                                                      errorSockets, 5) 
+                                                      errorSockets, timeout) 
     print("from %s: rec'd '%s'" % (repr(clientAddrPort), message))
     # If the select timeout occurs, we need to increment the counter.
     if not readReady and not writeready and not errorReady:
         pass #TODO: fill in for nothing
     # If there is work to do, do it in here. 
     else:
+		# ensure that the timeout is only 10 seconds because it is working
+		timeout = 10 
         for sock in readReady:
             dgram, client = sock.recvfrom(100)
             print('dgram received from\t%s\t%s' % (client, dgram))
             #the client received is also a random port number which we should 
             #reply
+            signal: str = ''
             if client not in session_dictionary:
 				session_dictionary[client] = JFTPSession(client)
-				session_dictionary[client].digest_application(dgram)
+				signal = session_dictionary[client].digest_application(dgram)
 			else:
 				session_dictionary[client].digest_application(dgram)
+			if signal is 'FIN':
+				#TODO: figure out how to destroy the object and send the client
+				#The aknowledgement that it is finished.
+				
+				pass 
             
 class JFTPSession:
 	_client = None
@@ -88,7 +97,7 @@ class JFTPSession:
 		os.write(_fd, data)
 		if _current_flag is 99:
 			_open_file.close()
-			return 'FIN'
+			return 'FINACK'
 		return 'ACK' + str(_current_seq)
 		
 	#Only digest the header
@@ -97,14 +106,17 @@ class JFTPSession:
 		
 	def _get_filename(self, data):
 		#TODO: transform byte data into string. If sequence not 0 then confirm
-		return data[:FILENAME_SIZE]
+		_filename = data[:FILENAME_SIZE].decode()
+		return data[FILENAME_SIZE:]
 		
 	def _get_sequence(self, data):
 		#TODO: transform byte data into integer. Check if it is the next packet
-		return data[:SEQUENCE_SIZE]
+		_current_seq = int.from_bytes(data[:SEQUENCE_SIZE], 'big')
+		return data[SEQUENCE_SIZE:]
 	
 	def _get_flags(self, data):
 		#TODO: transform byte data into integer. Check if any important flags
-		return data[:FLAGS_SIZE]
+		_current_flag = int.from_bytes(data[:FLAGS_SIZE], 'big')
+		return data[FLAGS_SIZE:]
 		
 	
