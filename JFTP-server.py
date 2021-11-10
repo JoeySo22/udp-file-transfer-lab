@@ -2,7 +2,7 @@
 from socket import *
 from select import select
 
-from JFTP-states import *
+import os
 
 
 # default params
@@ -30,23 +30,6 @@ print("binding datagram socket to %s" % repr(serverAddr))
 serverSocket = socket(AF_INET, SOCK_DGRAM)
 serverSocket.bind(serverAddr)
 print("ready to receive")
-"""
-I must implement sequence numbers to enumerate the packets being sent.
-I'm going to set a limit on the size of files able to be transmitted. I'm going
-to go with 15MB like emails. Each packet will be size 999. So there might be
-16 or so many packets. Maybe this may be enqueue'd to the front of the byte
-array sent. So only 2 bytes are needed for the beginning and the end for the 
-next packet. First 2 bytes are for id, last two bytes are for next. Going from
-00 to 15
-
-How do we know if we're done? Should I send what the total number of packets is 
-supposed to be? Maybe it isn't as necessary and instead use the last 2 bytes to 
-have a special meaning. The server won't have a special rule for knowing how 
-large a file is to be transmitted. It will be up to the client to know the 15MB 
-size. 
-"""
-
-current_state = LISTENING
 
 readSockets = []
 writeSockets = []
@@ -55,10 +38,7 @@ errorSockets = []
 readSockets.append(serverSocket)
 dgram = b''
 client = None
-filename = ''
-file = None
-
-state_set = MAKE_CURRENT_STATES_LIST()
+session_dictionary: dict = {}
 
 while 1:
     # Select is mostly for utilizing the timeout as I understand. 
@@ -67,10 +47,64 @@ while 1:
     print("from %s: rec'd '%s'" % (repr(clientAddrPort), message))
     # If the select timeout occurs, we need to increment the counter.
     if not readReady and not writeready and not errorReady:
-        count_state()
-        check_timeout()
+        pass #TODO: fill in for nothing
     # If there is work to do, do it in here. 
     else:
         for sock in readReady:
             dgram, client = sock.recvfrom(100)
             print('dgram received from\t%s\t%s' % (client, dgram))
+            #the client received is also a random port number which we should 
+            #reply
+            if client not in session_dictionary:
+				session_dictionary[client] = JFTPSession(client)
+				session_dictionary[client].digest_application(dgram)
+			else:
+				session_dictionary[client].digest_application(dgram)
+            
+class JFTPSession:
+	_client = None
+	_debug = False
+	FILENAME_SIZE = 28
+	SEQUENCE_SIZE = 2
+	FLAGS_SIZE = 2
+	PACKET_SIZE = 100
+	DATA_SIZE = FLAGS_SIZE - SEQUENCE_SIZE - FILENAME_SIZE - IP_ADDR_SIZE
+	_filename = ''
+	_open_file = None
+	_fd = -1
+	_current_seq = 0
+	_current_flag = 0
+	
+	def __init__(self, client, debug=False):
+		self._client = client
+		self._debug = debug
+	
+	#Only digest the data
+	def digest_application(self, data) -> str:
+		data = digest_header(data)
+		if _current_seq is 0:
+			_open_file = open(_filename, 'w')
+			_fd = _open_file.fileno()
+		os.write(_fd, data)
+		if _current_flag is 99:
+			_open_file.close()
+			return 'FIN'
+		return 'ACK' + str(_current_seq)
+		
+	#Only digest the header
+	def digest_header(self, data:bytes):
+		return _get_flags(_get_sequence(_get_filename(data)))
+		
+	def _get_filename(self, data):
+		#TODO: transform byte data into string. If sequence not 0 then confirm
+		return data[:FILENAME_SIZE]
+		
+	def _get_sequence(self, data):
+		#TODO: transform byte data into integer. Check if it is the next packet
+		return data[:SEQUENCE_SIZE]
+	
+	def _get_flags(self, data):
+		#TODO: transform byte data into integer. Check if any important flags
+		return data[:FLAGS_SIZE]
+		
+	
