@@ -38,7 +38,9 @@ errorSockets = []
 readSockets.append(serverSocket)
 dgram = b''
 client = None
+client_list = []
 session_dictionary: dict = {}
+response_dict: dict = {}
 timeout = 300 # 5 minutes for log when not serving
 
 while 1:
@@ -48,7 +50,7 @@ while 1:
     print("from %s: rec'd '%s'" % (repr(clientAddrPort), message))
     # If the select timeout occurs, we need to increment the counter.
     if not readReady and not writeready and not errorReady:
-        pass #TODO: fill in for nothing
+        timeout = 300
     # If there is work to do, do it in here. 
     else:
 		# ensure that the timeout is only 10 seconds because it is working
@@ -56,19 +58,34 @@ while 1:
         for sock in readReady:
             dgram, client = sock.recvfrom(100)
             print('dgram received from\t%s\t%s' % (client, dgram))
-            #the client received is also a random port number which we should 
-            #reply
-            signal: str = ''
+            """The client received is also a random port number which we should 
+            reply."""
+            session_response: str = ''
             if client not in session_dictionary:
-				session_dictionary[client] = JFTPSession(client)
-				signal = session_dictionary[client].digest_application(dgram)
+				# Set up the new session and a place for the response. 
+				session_dictionary[client] = (JFTPSession(client), '')
+				# Create a new socket for sending
+				new_write_socket = socket(AF_NET, SOCK_DRGRAM)
+				new_write_socket.bind(client)
+				# Add the new socket to the list for select
+				writeSockets.append(new_write_socket)
+				# Call the digestion and store the response to the dictionary.
+				session_dictionary[client][1] = 
+					session_dictionary[client].digest_application(dgram)
 			else:
-				session_dictionary[client].digest_application(dgram)
-			if signal is 'FIN':
-				#TODO: figure out how to destroy the object and send the client
-				#The aknowledgement that it is finished.
+				# Call the digestion and store the response to the dictionary.
+				session_dictionary[client][1] = 
+					session_dictionary[client].digest_application(dgram)
 				
-				pass 
+		for sock in writeSockets:
+			"""Each session has a response. For each socket, how do I know what I need
+			to send back? Do I need another dictionary? """
+			sock_host, sock_port = sock.getpeername()
+			response = session_dictionary[(socket_host, sock_port)][1]
+			sock.send(response)
+			#Delete the socket if it is finished.
+			if response == 'FIN':
+				writeSockets.remove(sock)
             
 class JFTPSession:
 	_client = None
@@ -97,8 +114,8 @@ class JFTPSession:
 		os.write(_fd, data)
 		if _current_flag is 99:
 			_open_file.close()
-			return 'FINACK'
-		return 'ACK' + str(_current_seq)
+			return 'FINACK', self._client
+		return 'ACK' + str(_current_seq), self._client
 		
 	#Only digest the header
 	def digest_header(self, data:bytes):
