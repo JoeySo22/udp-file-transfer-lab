@@ -47,7 +47,25 @@ if os.path.exists(filename):
 	while True:
 		readReady, writeReady, expSockets = select.select(readSockets, 
 			writeSockets, expSockets, 10)
+		ack_flag = False
 		for sock in readReady:
+			message, server_port = sock.recvfrom(6)
+			encoded_num = ''
+			if sequence_num < 10:
+				encoded_num = b'0' + str(sequence_num).encode()
+			else:
+				encoded_num = str(sequence_num).encode()
+			ack_flag = (message == (b'ACK[' + 
+				encoded_num + b']'))
+	'''
+	Another option is to see if perhaps we can just do a loop and block 
+	the write by having read come first. This might suffice but we cannot
+	figure out a way to timeout and to break timeout on an available socket.
+	
+	1. We might still be able to do the same functionality by having a flag
+	of the correct response. How do we repeat a section?? << Don't worry
+	about this for now. 
+	'''
 			
 			
 	

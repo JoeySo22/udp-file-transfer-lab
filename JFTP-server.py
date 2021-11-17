@@ -128,12 +128,12 @@ class JFTPSession:
 		
 	def _get_sequence(self, data):
 		#TODO: transform byte data into integer. Check if it is the next packet
-		_current_seq = int.from_bytes(data[:SEQUENCE_SIZE], 'big')
+		_current_seq = int(data[:SEQUENCE_SIZE].decode())
 		return data[SEQUENCE_SIZE:]
 	
 	def _get_flags(self, data):
 		#TODO: transform byte data into integer. Check if any important flags
-		_current_flag = int.from_bytes(data[:FLAGS_SIZE], 'big')
+		_current_flag = int(data[:FLAGS_SIZE].decode())
 		return data[FLAGS_SIZE:]
 		
 	
